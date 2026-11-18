@@ -501,6 +501,34 @@ SWAGameXRMappingTest >> testTheGraphIsFedWithTheButtonSlabClosed [
 
 {
 	#category : #tests,
+	#'squeak_changestamp' : 'MCPServer (jl) 11/18/2026 18:35'
+}
+SWAGameXRMappingTest >> testTheTerrainIsGroundOnlyInFirstPerson [
+	| scene probe gameWorld floor centre half |
+	gameWorld := xr gameWorld.
+	gameWorld clearTerrain.
+	xr generateChunkAtX: 0 z: 0.
+	gameWorld voxels clear.
+	floor := 4.
+	0 to: 15 do: [:cx |
+		0 to: 15 do: [:cz |
+			0 to: floor - 1 do: [:cy | gameWorld voxels at: cx at: cy at: cz put: 1]]].
+	scene := SRObject new.
+	probe := SRObject new.
+	scene addChild: xr; addChild: probe.
+	centre := xr globalPositionForCellX: 8.5 y: floor - 0.5 z: 8.5.
+	half := Vector3 x: xr worldScale / 3 y: xr worldScale / 3 z: xr worldScale / 3.
+	self deny: xr isSolid.
+	self deny: ((SRSceneSolids forObject: probe) solidInBoxCenter: centre halfExtents: half).
+	self assert: ((SRRay origin: centre + (0 @ 1 @ 0) forward: (0 @ -1 @ 0)) castNearestSolid: scene) isNil.
+	xr instVarNamed: 'walkMode' put: true.
+	self assert: xr isSolid.
+	self assert: ((SRSceneSolids forObject: probe) solidInBoxCenter: centre halfExtents: half).
+	self deny: ((SRRay origin: centre + (0 @ 1 @ 0) forward: (0 @ -1 @ 0)) castNearestSolid: scene) isNil.
+]
+
+{
+	#category : #tests,
 	#'squeak_changestamp' : 'MCPServer (SqueakXR) 10/19/2026 14:53'
 }
 SWAGameXRMappingTest >> testTheTerrainIsSolidToTheBoxSweep [

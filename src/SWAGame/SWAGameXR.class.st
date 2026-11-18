@@ -1722,10 +1722,12 @@ SWAGameXR >> isApp [
 
 {
 	#category : #testing,
-	#'squeak_changestamp' : 'MCPServer (jl) 11/3/2026 18:31'
+	#'squeak_changestamp' : 'MCPServer (jl) 11/18/2026 18:35'
 }
 SWAGameXR >> isSolid [
-	^ true
+	"On the table the board is a model at 5 cm a block, not ground: the holodeck's
+	walking and teleport would otherwise climb onto it and stop at its edges."
+	^ walkMode == true
 ]
 
 {
