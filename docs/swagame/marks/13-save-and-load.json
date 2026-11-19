@@ -1,0 +1,24 @@
+{
+ "keys": [
+  "SWAGameWorld>>asJson",
+  "SWAGameWorld>>capturedState",
+  "SWAGameWorld>>restoreFromJson:",
+  "SWAGameWorld>>saveAs:",
+  "SWAGameWorld>>detachedCopy",
+  "SWAGameWorld class>>fromJson:",
+  "SWAGameWorld class>>loadNamed:",
+  "SWAGameWorld class>>savedDirectory",
+  "SWAGameWorld class>>savedNames",
+  "SWAGameWorld class>>nextSavedName",
+  "SWAGameWorld class>>bytesToText:",
+  "SWAGameWorld class>>textToBytes:",
+  "SWAGameXR>>adoptWorld:",
+  "SWAGameXR>>addGameItemsTo:",
+  "SWAGameMob>>lieDeadWith:after:"
+ ],
+ "comments": {
+  "SWAGameWorld>>capturedState": "Unpreempted: the render process ticks the game.",
+  "SWAGameXR>>adoptWorld:": "Swapped between frames."
+ },
+ "provenance": {}
+}

@@ -1,0 +1,39 @@
+{
+ "keys": [
+  "SWAGameXR",
+  "SWAGameBlocks",
+  "SWAGameXR (comment)",
+  "SWAGameBlocks (comment)",
+  "SWAGameXR class>>swagameTerrain",
+  "SWAGameXR class>>blockOutlines",
+  "SWAGameXR class>>blockTextures",
+  "SWAGameXR>>renderTerrainMeshOn:",
+  "SWAGameXR>>ensureVoxelMeshMaterial",
+  "SWAGameXR>>setVoxelUniforms",
+  "SWAGameXR>>setShaderFloat:at:on:",
+  "SWAGameXR>>setGrassUniformsOn:",
+  "SWAGameXR>>effectiveLineThickness",
+  "SWAGameXR>>lineThickness",
+  "SWAGameXR>>lineThickness:",
+  "SWAGameXR>>ensureGrassTexture",
+  "SWAGameXR>>updateGrassTexture",
+  "SWAGameXR>>grassShadeCount",
+  "SWAGameXR>>grassShadePalette",
+  "SWAGameXR>>grassWordForLevel:",
+  "SWAGameXR>>shadeIndexForGrass:",
+  "SWAGameXR>>onCacheInvalidated",
+  "SWAGameXR>>#grassTexture",
+  "SWAGameXR>>#grassSource",
+  "SWAGameXR>>#grassShadeApplied",
+  "SWAGameXR>>#voxelMeshMaterial",
+  "SWAGameXR>>#voxelMeshSRShader",
+  "SWAGameXR>>#lineThickness",
+  "SWAGameBlocks class>>rgbaFor:"
+ ],
+ "comments": {
+  "SWAGameXR class>>swagameTerrain": "Block id in vertex alpha, grass map in green and alpha. Page 4.",
+  "SWAGameXR>>updateGrassTexture": "Only changed columns; sized from the original grid (findings 15.6).",
+  "SWAGameXR>>grassWordForLevel:": "Green and alpha survive the BGRA swap."
+ },
+ "provenance": {}
+}

@@ -1,0 +1,27 @@
+// Hand-authored. One SRWorld cycle and the three clocks of SWAGameXR.
+// Render: dot -Tsvg three-clocks.dot -o three-clocks.svg
+digraph threeClocks {
+  rankdir=LR;
+  node [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=10, fillcolor="#f2f2f2"];
+  edge [fontname="Helvetica", fontsize=9];
+
+  subgraph cluster_cycle {
+    label="SRWorld>>doOneCycle  (the XR world process, every frame)"; fontname="Helvetica"; fontsize=10;
+    style=dashed; color="#888888";
+    deferred [label="runPendingBetweenFrameActions\n(addDeferredFrameMessage: blocks)"];
+    step     [label="SRFrame>>stepObjects\nSWAGameXR>>step: deltaTime (ms)", fillcolor="#cde8cd"];
+    render   [label="SRFrame>>renderObjects\nSWAGameXR>>renderOn:", fillcolor="#fde3c8"];
+    deferred -> step -> render;
+  }
+
+  tick  [label="clock 2: SWAGameWorld>>tick\nevery secondsPerTick = 0.05 s\nmobs, births, deaths, grass", fillcolor="#cde8cd"];
+  interp [label="clock 1: every frame\nanimT := tickElapsed / tickMillis\nmobs drawn between two ticks", fillcolor="#cde8cd"];
+  mesh  [label="clock 3: SWAGameVoxelChunks>>rebuildUpTo: 2\nat most chunkRebuildBudget\ndirty chunks per frame", fillcolor="#fde3c8"];
+  draw  [label="drawMesh per chunk,\nthen one draw per mob", fillcolor="#fde3c8"];
+
+  step -> interp;
+  step -> tick [label="tickElapsed >= tickMillis"];
+  render -> mesh -> draw;
+  edit  [label="a hand tool digs or places\n(any process)", fillcolor="#ffffff"];
+  edit -> mesh [style=dashed, label="markDirtyAt:"];
+}

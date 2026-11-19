@@ -1,0 +1,30 @@
+// Hand-authored. One tick of one mob (SWAGameMob>>stepOn:), and who decides where it goes.
+// Render: dot -Tsvg mob-tick.dot -o mob-tick.svg
+digraph mobTick {
+  rankdir=LR;
+  node [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=10, fillcolor="#cde8cd"];
+  edge [fontname="Helvetica", fontsize=9];
+
+  subgraph cluster_tick {
+    label="SWAGameMob>>stepOn:  (every 0.05 s, per living mob in an active chunk)"; fontname="Helvetica"; fontsize=10;
+    style=dashed; color="#888888";
+    burn   [label="burnEnergyOn:\nburnRate per second"];
+    decide [label="reconsiderOn:\nevery 0.25 s"];
+    steer  [label="steerTowardTargetOn:\nnext waypoint,\nwatchdog 1.5 s"];
+    push   [label="applySeparationOn:\nsoft push"];
+    phys   [label="applyPhysicsOn:dt:\ngravity, jump, substeps"];
+    act    [label="actOn:\nrabbit grazes,\nfox kills and eats"];
+    end    [label="energy <= 0: die (body stays)\nelse maybe breed: addMob:"];
+    burn -> decide -> steer -> push -> phys -> act -> end;
+  }
+
+  strategy [label="movementStrategy\nalarmsFor:on:  (cheap, every decision)\nnextRouteFor:on:  (a route)", fillcolor="#fff6cc"];
+  nav      [label="SWAGameNavigator\nBFS reach, A* route\nover standable cells", fillcolor="#fff6cc"];
+  decide -> strategy [label="alarmed: replan and run\ncalm: keep plan, rest on arrival"];
+  strategy -> nav;
+
+  rabbit [label="rabbit: Flee (threat #fox)\n  calm: Graze\n    no grass: Wander", fillcolor="#ffffff"];
+  fox    [label="fox: Hunt (prey #rabbit)\n  only while hungry\n  else: Wander", fillcolor="#ffffff"];
+  rabbit -> strategy [style=dotted, arrowhead=none];
+  fox -> strategy [style=dotted, arrowhead=none];
+}

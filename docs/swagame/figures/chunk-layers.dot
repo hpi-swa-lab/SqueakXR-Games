@@ -1,0 +1,25 @@
+// Hand-authored. From a cell to the block byte, and from a block to the mesh that shows it.
+// Render: dot -Tsvg chunk-layers.dot -o chunk-layers.svg
+digraph chunkLayers {
+  rankdir=LR;
+  node [shape=record, fontname="Helvetica", fontsize=10, style=filled, fillcolor="#f2f2f2"];
+  edge [fontname="Helvetica", fontsize=9];
+
+  cell    [label="cell x y z\n(integers, y up)", shape=box, style="rounded,filled", fillcolor="#ffffff"];
+  grid    [label="SWAGameChunkedGrid|chunks: key -\> chunk|one-entry cache", fillcolor="#fff6cc"];
+  chunk   [label="SWAGameChunk|16 x 16 column|sections: Array", fillcolor="#fff6cc"];
+  section [label="section|ByteArray 4096|16 x 16 x 16\nnil until a solid write", fillcolor="#fff6cc"];
+  id      [label="block id\n0 air, 1 grass .. 6 water\n(SWAGameBlocks)", shape=box, style="rounded,filled", fillcolor="#ffffff"];
+
+  meshes  [label="SWAGameVoxelChunks|chunkEntries: key3 -\> \{mesh. dirty\}|dirtyCursor", fillcolor="#fde3c8"];
+  srmesh  [label="SRMesh\none per non-empty\n16-cube section", shape=box, style="rounded,filled", fillcolor="#fde3c8"];
+
+  cell -> grid [label="SWAGameChunk keyForCellX:z:\n(x >> 4) * 65536 + (z >> 4)"];
+  grid -> chunk;
+  chunk -> section [label="(y >> 4) + 1"];
+  section -> id [label="(y & 15, z & 15, x & 15)"];
+
+  cell -> meshes [label="markDirtyAt:\n(own chunk + neighbours\nacross a border)", style=dashed];
+  meshes -> srmesh [label="rebuildUpTo:"];
+  meshes -> section [label="empty section:\nskipped unscanned", style=dotted];
+}

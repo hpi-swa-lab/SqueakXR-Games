@@ -1,0 +1,37 @@
+{
+ "keys": [
+  "SWAGameMobModel",
+  "SWAGameMobGait",
+  "SWAGameMobRenderer",
+  "SWAGameMobModel (comment)",
+  "SWAGameMobGait (comment)",
+  "SWAGameMobRenderer (comment)",
+  "SWAGameMobModel class>>rabbit",
+  "SWAGameMobModel class>>fox",
+  "SWAGameMobModel class>>limbCodes",
+  "SWAGameMobModel>>part:pivot:box:color:",
+  "SWAGameMobModel>>facesDo:",
+  "SWAGameMobModel>>meshSource",
+  "SWAGameMobModel>>writePose:phase:swing:eating:time:",
+  "SWAGameMobModel>>bobAt:swing:",
+  "SWAGameMobGait>>advance:in:headingX:z:stride:",
+  "SWAGameMobGait>>settle",
+  "SWAGameMobRenderer class>>swagameMob",
+  "SWAGameMobRenderer>>renderEntries:t:transform:worldScale:on:",
+  "SWAGameMobRenderer>>drawEntry:t:transform:worldScale:material:time:",
+  "SWAGameMobRenderer>>noteTickOf:from:to:worldScale:seconds:",
+  "SWAGameMobRenderer>>ensureMaterial",
+  "SWAGameMobRenderer>>forgetModels",
+  "SWAGameMobRenderer>>onCacheInvalidated",
+  "SWAGameXR class>>animalModels",
+  "SWAGameXR>>buildMobAnimationData",
+  "SWAGameXR>>advanceGaits",
+  "SWAGameXR>>renderOn:"
+ ],
+ "comments": {
+  "SWAGameMobGait>>advance:in:headingX:z:stride:": "Phase follows distance, not time.",
+  "SWAGameMobModel>>meshSource": "Limb in vertex alpha, pivot in texcoords.",
+  "SWAGameXR>>buildMobAnimationData": "11-slot entries (findings 15.7.3)."
+ },
+ "provenance": {}
+}

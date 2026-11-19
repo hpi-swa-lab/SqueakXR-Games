@@ -1,0 +1,25 @@
+{
+ "keys": [
+  "SWAGameXR>>toggleWalkMode",
+  "SWAGameXR>>enterWalkMode",
+  "SWAGameXR>>exitWalkMode",
+  "SWAGameXR>>#walkMode",
+  "SWAGameXR>>worldScale:",
+  "SWAGameXR class>>tableWorldScale",
+  "SWAGameXR>>placeAvatarOnSurface",
+  "SWAGameXR>>panelScale",
+  "SWAGameXR>>placeNewPanel:atSide:z:",
+  "SWAGameXR>>bringPanelsToHand:",
+  "SWAGameXR>>placePanelsAt:",
+  "SWAGameXR>>facingFrom:toward:",
+  "SWAGameXR>>chunkMarkerSize",
+  "SWAGameXR>>updateSimulationCentre",
+  "SWAGameXR>>cellPositionOf:",
+  "SWAGameVoxelCollider>>intersectsBoxCenter:halfExtents:"
+ ],
+ "comments": {
+  "SWAGameXR>>enterWalkMode": "Scale and locomotion are one switch.",
+  "SWAGameXR>>panelScale": "Panels do not scale with the world."
+ },
+ "provenance": {}
+}

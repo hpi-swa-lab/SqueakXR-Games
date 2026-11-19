@@ -1,0 +1,44 @@
+// Hand-authored. How a mob gets from the simulation to a posed mesh: once per species, once per tick, once per frame.
+// Render: dot -Tsvg mob-animation.dot -o mob-animation.svg
+digraph mobAnimation {
+  rankdir=TB;
+  nodesep=0.3;
+  ranksep=0.35;
+  node [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=10, fillcolor="#f2f2f2"];
+  edge [fontname="Helvetica", fontsize=9];
+
+  subgraph cluster_species {
+    label="once per species  (meshFor:, on first use)"; fontname="Helvetica"; fontsize=10;
+    style=dashed; color="#888888";
+    boxes [label="SWAGameMobModel class>>rabbit / fox\npart: limb pivot: (y z) box: color:\nboxes of 1/16-block voxels", fillcolor="#ffffff"];
+    mesh  [label="meshSource\none quad per visible voxel face\ncolour alpha = limb code x 32\ntexcoords = pivot (y z)", fillcolor="#ffffff"];
+    boxes -> mesh;
+  }
+
+  subgraph cluster_tick {
+    label="once per tick, 20 Hz  (SWAGameXR, after SWAGameWorld>>tick)"; fontname="Helvetica"; fontsize=10;
+    style=dashed; color="#888888";
+    entry [label="buildMobAnimationData\nentry: from = last tick's position\nto = this tick's position\ngait, isEating, remains", fillcolor="#cde8cd"];
+    note  [label="advanceGaits\nnoteTickOf:...  per living mob\ncells = |to - from| in x z / worldScale", fillcolor="#cde8cd"];
+    gait  [label="SWAGameMobGait>>advance:in:headingX:z:stride:\nfrom := to   (phase, yaw, swing)\nphaseTo += cells / stride x 2 pi\nyawTo: half way to atan2(vx, vz), if moving\nswingTo: half way to 0 .. 0.9 by speed", fillcolor="#cde8cd"];
+    entry -> note -> gait;
+  }
+
+  subgraph cluster_frame {
+    label="once per frame per animal  (renderEntries:..., drawEntry:...)"; fontname="Helvetica"; fontsize=10;
+    style=dashed; color="#888888";
+    t     [label="animT = t in 0..1\nhow far the frame is\nbetween the last two ticks", fillcolor="#fde3c8"];
+    lerp  [label="lerp at t\nposition, phase, swing, yaw", fillcolor="#fde3c8"];
+    pose  [label="writePose:phase:swing:eating:time:\nlegs A, legs B, head, tail (rad)\n16 bytes -> uniform pose\nbobAt:swing: -> y", fillcolor="#fde3c8"];
+    xform [label="rotateYaw:lying:, combine:scale:x:y:z:\nglobal x (scale x rotation | x y z)\none reused RlMatrix", fillcolor="#fde3c8"];
+    draw  [label="Raylib drawMesh\nspecies mesh, swagameMob shader", fillcolor="#fde3c8"];
+    vert  [label="vertex shader\nlimb := alpha x 255 / 32\nlegs, head: rotate about x through pivot\ntail: rotate about y through pivot z", fillcolor="#fde3c8"];
+    t -> lerp -> pose -> draw;
+    lerp -> xform -> draw;
+    draw -> vert;
+  }
+
+  gait -> lerp [label="phaseFrom/To, yawFrom/To,\nswingFrom/To"];
+  entry -> lerp [label="from, to"];
+  mesh -> draw [label="same mesh for\nevery rabbit"];
+}

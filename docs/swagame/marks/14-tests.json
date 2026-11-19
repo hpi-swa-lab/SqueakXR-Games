@@ -1,0 +1,16 @@
+{
+ "keys": [
+  "SWAGameTestCase",
+  "SWAGameTestCase (comment)",
+  "SWAGameTestCase>>preferenceHolders",
+  "SWAGameTestCase>>preferenceVariablesOf:",
+  "SWAGameTestCase>>setUp",
+  "SWAGameTestCase>>tearDown",
+  "SWAGameTestCase>>testPreferencesAreTheCodeDefaults",
+  "SWAGameXRMappingTest>>tearDown"
+ ],
+ "comments": {
+  "SWAGameTestCase>>setUp": "Nils the preferences so the code defaults apply."
+ },
+ "provenance": {}
+}

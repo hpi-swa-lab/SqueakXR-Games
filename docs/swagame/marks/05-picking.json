@@ -1,0 +1,43 @@
+{
+ "keys": [
+  "SWAGameVoxelCollider",
+  "SWAGameVoxelRayWalk",
+  "SWAGameVoxelCollider (comment)",
+  "SWAGameVoxelRayWalk (comment)",
+  "SWAGameXR>>collisionGeometry",
+  "SWAGameXR>>marchBounds",
+  "SWAGameXR>>noteVoxelHitX:y:z:face:",
+  "SWAGameXR>>lastVoxelHit",
+  "SWAGameXR>>#lastVoxelHit",
+  "SWAGameXR>>onRaycast:",
+  "SWAGameXR>>cellPositionForGlobal:",
+  "SWAGameXR>>updateHandTargets",
+  "SWAGameXR>>targetVoxelFor:",
+  "SWAGameXR>>renderHandTargetsOn:",
+  "SWAGameXR>>#handTargets",
+  "SWAGameXR>>dragTo:",
+  "SWAGameVoxelCollider>>rayIntersection:",
+  "SWAGameVoxelCollider>>voxelHitForRay:",
+  "SWAGameVoxelCollider>>intersectsBoxCenter:halfExtents:",
+  "SWAGameVoxelRayWalk class>>game:ray:",
+  "SWAGameVoxelRayWalk>>setGame:ray:",
+  "SWAGameVoxelRayWalk>>hasUsableRay",
+  "SWAGameVoxelRayWalk>>clipToGrid",
+  "SWAGameVoxelRayWalk>>clipAxis:origin:direction:from:to:",
+  "SWAGameVoxelRayWalk>>findHit",
+  "SWAGameVoxelRayWalk>>prepareStepping",
+  "SWAGameVoxelRayWalk>>march",
+  "SWAGameVoxelRayWalk>>stepToNextVoxel",
+  "SWAGameVoxelRayWalk>>hitResult",
+  "SWAGameButton>>collisionGeometry",
+  "SWAGameSlab>>collisionGeometry",
+  "SWAGameDisplayPlane>>collisionGeometry",
+  "SWAGameBasePlate>>grabTarget"
+ ],
+ "comments": {
+  "SWAGameVoxelRayWalk": "Small methods on purpose: the ARM64 JIT crash.",
+  "SWAGameVoxelCollider>>rayIntersection:": "The face goes back through noteVoxelHit..., SRHand drops anything on the result.",
+  "SWAGameVoxelCollider>>intersectsBoxCenter:halfExtents:": "Min/max per axis: corner order does not survive a half turn."
+ },
+ "provenance": {}
+}
