@@ -692,8 +692,17 @@ SWAGameXR >> applyToolAtX: gx y: gy z: gz face: aFaceNormal [
 ]
 
 {
+	#category : #accessing,
+	#'squeak_changestamp' : 'jl-MCPServer 11/20/2026 14:09'
+}
+SWAGameXR >> avatarsDo: aBlock [
+	"#world, not #currentXRWorld, see #handMarkerFor:."
+	self world ifNotNil: [:w | w avatarsDo: aBlock].
+]
+
+{
 	#category : #panels,
-	#'squeak_changestamp' : 'MCPServer 10/16/2026 10:28'
+	#'squeak_changestamp' : 'jl-MCPServer 11/20/2026 14:09'
 }
 SWAGameXR >> bringPanelsToHand: aHand [
 	"Walk mode has no table to stand the panels beside, so they come to the
@@ -705,7 +714,7 @@ SWAGameXR >> bringPanelsToHand: aHand [
 	same spot."
 
 	| avatar |
-	avatar := self currentXRWorld ifNil: [^ self] ifNotNil: [:w | w avatar].
+	avatar := aHand avatar.
 	avatar ifNil: [^ self].
 	self placePanelsAt: (avatar menuPlacementPositionForHand: aHand)
 ]
@@ -1309,42 +1318,41 @@ SWAGameXR >> ensureVoxelMeshMaterial [
 
 {
 	#category : #'walk mode',
-	#'squeak_changestamp' : 'MCPServer (SqueakXR) 10/19/2026 14:46'
+	#'squeak_changestamp' : 'jl-MCPServer 11/20/2026 14:09'
 }
 SWAGameXR >> enterWalkMode [
 	"One block is one metre and the player stands in it. Scale and locomotion are
 	one switch: metre-sized blocks seen from a flying camera, or walking around a
 	5 cm world, are both nonsense."
-
 	walkMode := true.
 	self worldScale: 1.0.
-	self placeAvatarOnSurface.
+	self avatarsDo: [:each |
+		self placeOnSurface: each.
+		"The walking itself belongs to the avatar: the terrain only has to be
+		solid, which SWAGameVoxelCollider already answers for."
+		each locomotionEnabled: true].
+	"There is no table to stand the panels beside any more, and they were
+	sized for the board edge 16 m away."
 	self currentXRWorld ifNotNil: [:w |
-		w avatar ifNotNil: [:avatar |
-			"The walking itself belongs to the avatar: the terrain only has to be
-			solid, which SWAGameVoxelCollider already answers for."
-			avatar locomotionEnabled: true.
-			"There is no table to stand the panels beside any more, and they were
-			sized for the board edge 16 m away."
-			self bringPanelsToHand: avatar rightHand]]
+		w actingAvatar ifNotNil: [:avatar | self bringPanelsToHand: avatar rightHand]].
 ]
 
 {
 	#category : #'walk mode',
-	#'squeak_changestamp' : 'MCPServer (jl) 11/16/2026 10:50'
+	#'squeak_changestamp' : 'jl-MCPServer 11/20/2026 14:09'
 }
 SWAGameXR >> exitWalkMode [
-	"Back to the table. The avatar returns to the rig origin, since a player left
-	standing where a 1 m world used to be is 20 times too far away to see it."
-
-	| avatar |
+	"Back to the table. The avatars return to the rig origin, since a player left
+	standing where a 1 m world used to be is 20 times too far away to see it.
+	A second player stands 2.5 m back, where SRSimpleAvatarMovementEmulator starts one."
 	walkMode := false.
 	self worldScale: self class tableWorldScale.
 	self repositionPanelsAtTable.
-	avatar := self currentXRWorld ifNil: [^ self] ifNotNil: [:w | w avatar].
-	avatar ifNotNil: [
-		avatar useDefaultLocomotion.
-		avatar translation: (Vector3 x: 0 y: 0 z: 0)]
+	self avatarsDo: [:each |
+		each useDefaultLocomotion.
+		each translation: (each == self world avatar
+			ifTrue: [Vector3 zero]
+			ifFalse: [0m @ 0m @ 2.5m])].
 ]
 
 {
@@ -1588,7 +1596,7 @@ SWAGameXR >> hand: aHand holds: aToolOrNil [
 
 {
 	#category : #menus,
-	#'squeak_changestamp' : 'MCPServer (jl) 10/21/2026 11:06'
+	#'squeak_changestamp' : 'jl-MCPServer 11/20/2026 14:09'
 }
 SWAGameXR >> handMarkerFor: aToolOrNil [
 	"Which hands are holding this, for a tool row's label. Both can be, since a
@@ -1597,7 +1605,7 @@ SWAGameXR >> handMarkerFor: aToolOrNil [
 	"#world, not #currentXRWorld: the latter is SRWorld current, so a game in any
 	other scene would report the hands of whichever world happens to be running."
 	| avatar marks |
-	avatar := self world ifNil: [^ ''] ifNotNil: [:w | w avatar].
+	avatar := self world ifNil: [^ ''] ifNotNil: [:w | w actingAvatar].
 	avatar ifNil: [^ ''].
 	marks := WriteStream on: String new.
 	{'L' -> avatar leftHand. 'R' -> avatar rightHand} do: [:each |
@@ -1608,15 +1616,17 @@ SWAGameXR >> handMarkerFor: aToolOrNil [
 
 {
 	#category : #petting,
-	#'squeak_changestamp' : 'MCPServer (leo) 11/5/2026 17:49'
+	#'squeak_changestamp' : 'jl-MCPServer 11/20/2026 14:09'
 }
 SWAGameXR >> handTouchPoints [
 
-	| avatar |
-	avatar := self world ifNil: [^ #()] ifNotNil: [:w | w avatar].
-	avatar ifNil: [^ #()].
-	^ (avatar hands select: [:hand | hand notNil])
-		collect: [:hand | self globalTransform globalPointToLocal: hand globalTranslation]
+	| points |
+	points := OrderedCollection new.
+	self avatarsDo: [:each |
+		each hands do: [:hand |
+			hand ifNotNil: [
+				points add: (self globalTransform globalPointToLocal: hand globalTranslation)]]].
+	^ points
 ]
 
 {
@@ -2098,35 +2108,6 @@ SWAGameXR >> placeAtX: gx y: gy z: gz face: aFaceNormal material: aSymbol [
 ]
 
 {
-	#category : #'walk mode',
-	#'squeak_changestamp' : 'MCPServer (SqueakXR) 10/19/2026 14:46'
-}
-SWAGameXR >> placeAvatarOnSurface [
-	"Stand the player on the column under them, or on the middle of a generated
-	chunk when they are over terrain that does not exist yet."
-
-	| xrWorld avatar cell cellX cellZ top |
-	xrWorld := self currentXRWorld ifNil: [^ self].
-	avatar := xrWorld avatar ifNil: [^ self].
-	"The head: the player stands under it, and it is metres from the rig origin
-	once they have walked about the play space."
-	cell := self cellPositionOf: (xrWorld camera ifNil: [avatar]).
-	cellX := cell x floor.
-	cellZ := cell z floor.
-	(world isCellGeneratedX: cellX z: cellZ) ifFalse: [
-		| key |
-		key := world generatedChunks detect: [:each | true] ifNone: [^ self].
-		cellX := (world chunkXOfKey: key) * SWAGameChunk size + 8.
-		cellZ := (world chunkZOfKey: key) * SWAGameChunk size + 8].
-	top := world heightAtX: cellX + 1 y: cellZ + 1.
-	"The avatar notices the rig moving and stands its own body under the head."
-	avatar teleportTo: (self
-		globalPositionForCellX: cellX + 0.5
-		y: top
-		z: cellZ + 0.5)
-]
-
-{
 	#category : #'box management',
 	#'squeak_changestamp' : 'MCPServer (jl) 11/2/2026 17:32'
 }
@@ -2170,6 +2151,32 @@ SWAGameXR >> placeNewPanel: aSlab atSide: aSign z: aZ [
 			+ (forward * 60 cm)
 			+ (right * (aSign * 45 cm))
 			- (Vector3 up * 20 cm)
+]
+
+{
+	#category : #'walk mode',
+	#'squeak_changestamp' : 'jl-MCPServer 11/20/2026 14:09'
+}
+SWAGameXR >> placeOnSurface: anAvatar [
+	"Stand the player on the column under them, or on the middle of a generated
+	chunk when they are over terrain that does not exist yet."
+	| cell cellX cellZ top |
+	"The head: the player stands under it, and it is metres from the rig origin
+	once they have walked about the play space."
+	cell := self cellPositionOf: anAvatar camera.
+	cellX := cell x floor.
+	cellZ := cell z floor.
+	(world isCellGeneratedX: cellX z: cellZ) ifFalse: [
+		| key |
+		key := world generatedChunks detect: [:each | true] ifNone: [^ self].
+		cellX := (world chunkXOfKey: key) * SWAGameChunk size + 8.
+		cellZ := (world chunkZOfKey: key) * SWAGameChunk size + 8].
+	top := world heightAtX: cellX + 1 y: cellZ + 1.
+	"The avatar notices the rig moving and stands its own body under the head."
+	anAvatar teleportTo: (self
+		globalPositionForCellX: cellX + 0.5
+		y: top
+		z: cellZ + 0.5)
 ]
 
 {
@@ -2813,12 +2820,14 @@ SWAGameXR >> spawn: aSpeciesSymbol atX: gx z: gz [
 
 {
 	#category : #tools,
-	#'squeak_changestamp' : 'MCPServer (jl) 11/3/2026 18:48'
+	#'squeak_changestamp' : 'jl-MCPServer 11/20/2026 14:09'
 }
 SWAGameXR >> spawnGunFor: aHand [
 
 	| avatar camera position gun |
-	avatar := self world ifNil: [^ self] ifNotNil: [:w | w avatar].
+	avatar := aHand
+		ifNil: [self world ifNil: [^ self] ifNotNil: [:w | w actingAvatar]]
+		ifNotNil: [aHand avatar].
 	avatar ifNil: [^ self].
 	camera := avatar camera.
 	position := aHand
@@ -3150,19 +3159,16 @@ SWAGameXR >> updateGrassTexture [
 
 {
 	#category : #tools,
-	#'squeak_changestamp' : 'MCPServer (jl) 10/21/2026 11:39'
+	#'squeak_changestamp' : 'jl-MCPServer 11/20/2026 14:09'
 }
 SWAGameXR >> updateHandTargets [
 	"Per frame, not per tick: the highlight has to follow the hand even while
 	the simulation is paused. The slot is written nil rather than removed, so
 	the dictionary is allocated once instead of every frame."
-
-	| avatar |
 	handTargets ifNil: [handTargets := IdentityDictionary new].
-	avatar := self world ifNil: [^ self] ifNotNil: [:each | each avatar].
-	avatar ifNil: [^ self].
-	avatar hands do: [:hand |
-		handTargets at: hand put: (self targetVoxelFor: hand)].
+	self avatarsDo: [:each |
+		each hands do: [:hand |
+			handTargets at: hand put: (self targetVoxelFor: hand)]].
 ]
 
 {
