@@ -26,7 +26,8 @@ Class {
 		'noise',
 		'generatedChunks',
 		'corpseIndex',
-		'config'
+		'config',
+		'garden'
 	],
 	#classVars : [
 		'DefaultGrassRegrowthPerSecond'
@@ -205,7 +206,7 @@ SWAGameWorld >> applyScenario: aScenario [
 
 {
 	#category : #serialization,
-	#'squeak_changestamp' : 'MCPServer (jl) 11/17/2026 14:35'
+	#'squeak_changestamp' : 'leo-MCPServer 11/19/2026 14:17'
 }
 SWAGameWorld >> asJson [
 	"Terrain, mobs and this game's own parameters. Height, grass and block bytes
@@ -227,6 +228,7 @@ SWAGameWorld >> asJson [
 		at: #eaten put: (state at: #eaten);
 		at: #starved put: (state at: #starved);
 		at: #config put: (state at: #config);
+		at: #garden put: (state at: #garden);
 		at: #chunks put: ((state at: #chunks) collect: [:each |
 			JsonObject new
 				at: #at put: (pair value: each first);
@@ -265,7 +267,7 @@ SWAGameWorld >> blockTypeAtX: cx z: cz y: cy [
 
 {
 	#category : #serialization,
-	#'squeak_changestamp' : 'MCPServer (jl) 11/17/2026 14:35'
+	#'squeak_changestamp' : 'leo-MCPServer 11/19/2026 14:17'
 }
 SWAGameWorld >> capturedState [
 	"Copied in one go, unpreempted: the render process ticks the game, and a
@@ -283,6 +285,7 @@ SWAGameWorld >> capturedState [
 			at: #eaten put: (eatenCount ifNil: [0]);
 			at: #starved put: (starvedCount ifNil: [0]);
 			at: #config put: (self config collect: [:each | each copy]);
+			at: #garden put: self garden asArray;
 			at: #chunks put: (self generatedChunks asSortedCollection asArray collect: [:key |
 				{key. (heightMap at: key) copy. (grassMap at: key) copy}]);
 			at: #voxels put: (voxels
@@ -341,11 +344,12 @@ SWAGameWorld >> chunkZOfKey: aKey [
 
 {
 	#category : #chunks,
-	#'squeak_changestamp' : 'MCPServer (jl) 11/2/2026 17:32'
+	#'squeak_changestamp' : 'leo-MCPServer 11/19/2026 14:17'
 }
 SWAGameWorld >> clearTerrain [
 	heightMap := Dictionary new.
 	grassMap := Dictionary new.
+	garden := nil.
 	riverMap := nil.
 	generatedChunks := Set new.
 	self removeAllMobs
@@ -495,6 +499,15 @@ SWAGameWorld >> ensureVoxels [
 			0 to: h - 1 do: [:cy |
 				voxels at: cx at: cy at: cz put: 1]]].
 	^ voxels
+]
+
+{
+	#category : #terrain,
+	#'squeak_changestamp' : 'leo-MCPServer 11/19/2026 14:17'
+}
+SWAGameWorld >> garden [
+
+	^ garden ifNil: [garden := SWAGameGarden new]
 ]
 
 {
@@ -1010,7 +1023,7 @@ SWAGameWorld >> removeAllMobs [
 
 {
 	#category : #serialization,
-	#'squeak_changestamp' : 'MCPServer (jl) 11/17/2026 14:35'
+	#'squeak_changestamp' : 'leo-MCPServer 11/19/2026 14:17'
 }
 SWAGameWorld >> restoreFromJson: json [
 	| key height |
@@ -1030,6 +1043,7 @@ SWAGameWorld >> restoreFromJson: json [
 			yourself)].
 	heightMap := Dictionary new.
 	grassMap := Dictionary new.
+	garden := SWAGameGarden fromArray: ((json at: #garden) ifNil: [#()]).
 	generatedChunks := Set new.
 	(json at: #chunks) do: [:each |
 		| k |
@@ -1243,4 +1257,15 @@ SWAGameWorld >> voxels [
 SWAGameWorld >> voxels: aGrid [
 
 	voxels := aGrid.
+]
+
+{
+	#category : #terrain,
+	#'squeak_changestamp' : 'leo-MCPServer 11/19/2026 14:17'
+}
+SWAGameWorld >> water: aCell [
+	"Zero based, aCell is x @ z."
+
+	(self garden pourOn: aCell) ifTrue: [
+		self grassAt: aCell put: ((self grassAt: aCell) + 1 min: self maxGrass)].
 ]

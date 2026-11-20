@@ -447,6 +447,18 @@ SWAGameFox >> isHungry [
 
 {
 	#category : #behavior,
+	#'squeak_changestamp' : 'MCPServer (jl) 11/2/2026 18:36'
+}
+SWAGameFox >> makeOffspring [
+	energy := energy - reproduceCost.
+	^ self class new
+		positionX: x y: y z: z;
+		energy: offspringEnergy;
+		yourself
+]
+
+{
+	#category : #behavior,
 	#'squeak_changestamp' : 'MCPServer (jl) 11/17/2026 14:35'
 }
 SWAGameFox >> makeOffspringOn: aGame [
