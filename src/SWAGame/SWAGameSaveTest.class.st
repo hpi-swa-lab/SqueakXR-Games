@@ -35,6 +35,18 @@ SWAGameSaveTest >> setUp [
 
 {
 	#category : #tests,
+	#'squeak_changestamp' : 'leo-MCPServer 11/19/2026 14:19'
+}
+SWAGameSaveTest >> testAGardenIsSaved [
+
+	| loaded |
+	SWAGameGarden dropsPerStage timesRepeat: [world water: 3 @ 4].
+	loaded := SWAGameWorld fromJson: world asJson.
+	self assert: (loaded garden stageAt: 3 @ 4) equals: 1.
+]
+
+{
+	#category : #tests,
 	#'squeak_changestamp' : 'MCPServer (jl) 10/29/2026 14:38'
 }
 SWAGameSaveTest >> testALoadedWorldGrowsAsTheOriginalWould [

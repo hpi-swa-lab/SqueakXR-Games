@@ -756,6 +756,14 @@ SWAGameMob >> lifespan: aNumber [
 
 {
 	#category : #behavior,
+	#'squeak_changestamp' : 'MCPServer (jl) 11/2/2026 18:36'
+}
+SWAGameMob >> makeOffspring [
+	^ nil
+]
+
+{
+	#category : #behavior,
 	#'squeak_changestamp' : 'MCPServer (jl) 11/17/2026 14:35'
 }
 SWAGameMob >> makeOffspringOn: aGame [

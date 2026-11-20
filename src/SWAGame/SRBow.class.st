@@ -10,7 +10,9 @@ Class {
 		'nockedArrow',
 		'launchedArrows',
 		'upperString',
-		'lowerString'
+		'lowerString',
+		'drawSound',
+		'releaseSound'
 	],
 	#category : #'SWAGame-Bow',
 	#'squeak_changestamp' : '<historical>'
@@ -118,6 +120,15 @@ SRBow class >> restNockPoint [
 ]
 
 {
+	#category : #constants,
+	#'squeak_changestamp' : 'leo-MCPServer 11/20/2026 16:14'
+}
+SRBow class >> soundPath: aFileName [
+
+	^ (SWAGameAssets assetsDirectory / 'bow' / aFileName) fullName
+]
+
+{
 	#category : #menu,
 	#'squeak_changestamp' : 'leo-MCPServer 11/18/2026 17:56'
 }
@@ -187,11 +198,12 @@ SRBow >> buildModel [
 
 {
 	#category : #drawing,
-	#'squeak_changestamp' : 'leo-MCPServer 11/18/2026 17:56'
+	#'squeak_changestamp' : 'leo-MCPServer 11/20/2026 16:14'
 }
 SRBow >> cancelDraw [
 
 	nockedArrow ifNil: [^ self].
+	drawSound stop.
 	nockedArrow remove.
 	nockedArrow := nil.
 	self resetString
@@ -243,7 +255,7 @@ SRBow >> holdTransform [
 
 {
 	#category : #initialization,
-	#'squeak_changestamp' : 'leo-MCPServer 11/18/2026 17:56'
+	#'squeak_changestamp' : 'leo-MCPServer 11/20/2026 16:14'
 }
 SRBow >> initialize [
 
@@ -255,7 +267,19 @@ SRBow >> initialize [
 	lowerString := SRCube color: Color white size: 1 asVector3 at: 0 @ 0 @ 0.
 	string := SRBowString new.
 	self addChildren: {upperString. lowerString. string}.
+	self initializeSounds.
 	self updateString
+]
+
+{
+	#category : #initialization,
+	#'squeak_changestamp' : 'leo-MCPServer 11/20/2026 16:14'
+}
+SRBow >> initializeSounds [
+
+	drawSound := SRAudioPlayer new filepath: (self class soundPath: 'bow-draw.ogg').
+	releaseSound := SRAudioPlayer new filepath: (self class soundPath: 'bow-release.ogg').
+	self addChildren: {drawSound. releaseSound}
 ]
 
 {
@@ -330,6 +354,16 @@ SRBow >> limbPointAt: aFraction sign: aSign [
 ]
 
 {
+	#category : #drawing,
+	#'squeak_changestamp' : 'leo-MCPServer 11/20/2026 16:14'
+}
+SRBow >> nockArrow [
+
+	self addChild: (nockedArrow := SRArrow new).
+	drawSound play
+]
+
+{
 	#category : #geometry,
 	#'squeak_changestamp' : 'leo-MCPServer 11/18/2026 18:01'
 }
@@ -372,15 +406,18 @@ SRBow >> onGrabStopped: aHand [
 
 {
 	#category : #drawing,
-	#'squeak_changestamp' : 'leo-MCPServer 11/18/2026 17:56'
+	#'squeak_changestamp' : 'leo-MCPServer 11/20/2026 16:14'
 }
 SRBow >> release [
 
 	| arrow |
 	arrow := nockedArrow ifNil: [^ self].
 	nockedArrow := nil.
+	drawSound stop.
 	string draw >= self class minLaunchDraw
-		ifTrue: [self launch: arrow]
+		ifTrue: [
+			releaseSound play.
+			self launch: arrow]
 		ifFalse: [arrow remove].
 	self resetString
 ]
@@ -417,12 +454,12 @@ SRBow >> string [
 
 {
 	#category : #drawing,
-	#'squeak_changestamp' : 'leo-MCPServer 11/18/2026 17:56'
+	#'squeak_changestamp' : 'leo-MCPServer 11/20/2026 16:14'
 }
 SRBow >> updateDraw [
 
 	string updateDraw.
-	nockedArrow ifNil: [self addChild: (nockedArrow := SRArrow new)].
+	nockedArrow ifNil: [self nockArrow].
 	self updateString
 ]
 

@@ -74,7 +74,8 @@ Class {
 		'traceGraph',
 		'petSound',
 		'hearts',
-		'petSoundMob'
+		'petSoundMob',
+		'vegetation'
 	],
 	#classVars : [
 		'AnimalModels',
@@ -748,6 +749,16 @@ SWAGameXR >> buildMobAnimationData [
 	world corpsesDo: [:mob | fill value: mob value: mob remains].
 	[mobObjects size > count] whileTrue: [mobObjects removeLast].
 	self mobRenderer pruneGaitsBeyond: count.
+]
+
+{
+	#category : #watering,
+	#'squeak_changestamp' : 'leo-MCPServer 11/19/2026 14:18'
+}
+SWAGameXR >> canGrowAtX: gx y: gy z: gz [
+
+	^ (self topFilledYAtX: gx z: gz) = gy
+		and: [(gridHandle at: gx at: gy at: gz) ~= (SWAGameBlocks idFor: #water)]
 ]
 
 {
@@ -2431,7 +2442,7 @@ SWAGameXR >> renderHeartsOn: aSRRenderer [
 
 {
 	#category : #rendering,
-	#'squeak_changestamp' : 'MCPServer (jl) 11/13/2026 11:13'
+	#'squeak_changestamp' : 'leo-MCPServer 11/19/2026 14:18'
 }
 SWAGameXR >> renderOn: aSRRenderer [
 	"Raylib structs are refilled, never built: see #ensureRlScratch."
@@ -2466,6 +2477,7 @@ SWAGameXR >> renderOn: aSRRenderer [
 
 	self renderHandTargetsOn: aSRRenderer.
 	self renderHeartsOn: aSRRenderer.
+	self renderVegetationOn: aSRRenderer.
 
 	mobObjects do: [:entry |
 		mob := entry mob.
@@ -2547,6 +2559,15 @@ SWAGameXR >> renderTerrainMeshOn: aSRRenderer [
 	SRRaylibRenderer fill: rlVoxelTransform withMatrix4x4: self globalTransform.
 	chunks meshesDo: [:mesh |
 		Raylib drawMesh: mesh internalMesh material: rlMaterial transform: rlVoxelTransform]
+]
+
+{
+	#category : #rendering,
+	#'squeak_changestamp' : 'leo-MCPServer 11/19/2026 14:18'
+}
+SWAGameXR >> renderVegetationOn: aSRRenderer [
+
+	self vegetation renderGarden: world garden of: self.
 ]
 
 {
@@ -2939,16 +2960,18 @@ SWAGameXR >> stopPetSoundUnlessTouchedAt: touchPoints [
 
 {
 	#category : #'terrain editing',
-	#'squeak_changestamp' : 'MCPServer (jl) 11/2/2026 17:32'
+	#'squeak_changestamp' : 'leo-MCPServer 11/19/2026 14:18'
 }
 SWAGameXR >> syncHeightMapForColumnX: gx z: gz [
-	| x z top |
+	| x z top height |
 	x := gx rounded.
 	z := gz rounded.
 	((x between: 0 and: gridWidth - 1) and: [z between: 0 and: gridDepth - 1])
 		ifFalse: [^ self].
 	top := self topFilledYAtX: x z: z.
-	world heightAtX: x + 1 y: z + 1 put: (top ifNil: [0] ifNotNil: [top + 1])
+	height := top ifNil: [0] ifNotNil: [top + 1].
+	height = (world heightAtX: x + 1 y: z + 1) ifFalse: [world garden clearAt: x @ z].
+	world heightAtX: x + 1 y: z + 1 put: height
 ]
 
 {
@@ -3221,6 +3244,27 @@ SWAGameXR >> updateToolButtonSelection [
 ]
 
 {
+	#category : #rendering,
+	#'squeak_changestamp' : 'leo-MCPServer 11/19/2026 14:18'
+}
+SWAGameXR >> vegetation [
+
+	^ vegetation ifNil: [vegetation := SWAGameVegetation new]
+]
+
+{
+	#category : #watering,
+	#'squeak_changestamp' : 'leo-MCPServer 11/19/2026 14:18'
+}
+SWAGameXR >> vegetationBaseFor: aCell [
+
+	^ self
+		objectPosForCellX: aCell x + 0.5
+		y: (world heightAtX: aCell x + 1 y: aCell y + 1)
+		z: aCell y + 0.5
+]
+
+{
 	#category : #petting,
 	#'squeak_changestamp' : 'MCPServer (leo) 11/5/2026 17:49'
 }
@@ -3242,6 +3286,44 @@ SWAGameXR >> voxelChunks [
 			grid: gridHandle
 			width: gridWidth height: gridHeight depth: gridDepth
 			worldScale: worldScale]
+]
+
+{
+	#category : #watering,
+	#'squeak_changestamp' : 'leo-MCPServer 11/19/2026 14:18'
+}
+SWAGameXR >> voxelHitFrom: start to: end [
+
+	| hit entry |
+	hit := (SWAGameVoxelRayWalk game: self ray: (SRRay origin: start forward: (end - start) normalized))
+		ifNil: [^ nil]
+		ifNotNil: [:walk | walk findHit].
+	hit ifNil: [^ nil].
+	entry := hit at: 5.
+	^ ((self globalPositionForCellX: entry x y: entry y z: entry z) - start) length <= (end - start) length
+		ifTrue: [hit]
+]
+
+{
+	#category : #watering,
+	#'squeak_changestamp' : 'leo-MCPServer 11/19/2026 14:18'
+}
+SWAGameXR >> waterAtX: gx y: gy z: gz [
+
+	(self canGrowAtX: gx y: gy z: gz) ifTrue: [world water: gx @ gz].
+]
+
+{
+	#category : #watering,
+	#'squeak_changestamp' : 'leo-MCPServer 11/19/2026 14:18'
+}
+SWAGameXR >> wateredFrom: start to: end [
+
+	| hit |
+	world ifNil: [^ false].
+	hit := (self voxelHitFrom: start to: end) ifNil: [^ false].
+	self waterAtX: (hit at: 1) y: (hit at: 2) z: (hit at: 3).
+	^ true
 ]
 
 {
