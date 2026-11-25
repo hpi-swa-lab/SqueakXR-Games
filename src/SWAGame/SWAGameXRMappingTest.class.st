@@ -186,7 +186,7 @@ SWAGameXRMappingTest >> testChangingTheScaleReachesTheSharedSpace [
 
 {
 	#category : #tests,
-	#'squeak_changestamp' : 'MCPServer (jl) 10/21/2026 12:40'
+	#'squeak_changestamp' : 'leo-MCPServer 11/20/2026 19:10'
 }
 SWAGameXRMappingTest >> testEachHandTargetsItsOwnVoxel [
 	"Two hands, two targets. The game kept one #lastVoxelHit slot, which is
@@ -196,7 +196,6 @@ SWAGameXRMappingTest >> testEachHandTargetsItsOwnVoxel [
 	| world avatar left right gameWorld |
 	world := SRWorld new.
 	avatar := SRAvatar new.
-	world avatar: avatar.
 	world addChild: avatar.
 	world addChild: xr.
 	"A known flat floor four cells deep, as #testTheTerrainIsSolidToTheBoxSweep
@@ -649,7 +648,7 @@ SWAGameXRMappingTest >> testTogglingAfterAPanelWasRemovedByItsHaloReopensIt [
 
 {
 	#category : #tests,
-	#'squeak_changestamp' : 'MCPServer (jl) 10/21/2026 11:06'
+	#'squeak_changestamp' : 'leo-MCPServer 11/20/2026 19:10'
 }
 SWAGameXRMappingTest >> testToolRowsMarkTheHandHoldingThem [
 	"Each row arms the hand that reached for it, so the row has to be able to
@@ -659,7 +658,6 @@ SWAGameXRMappingTest >> testToolRowsMarkTheHandHoldingThem [
 	| world avatar menu rowNamed arm |
 	world := SRWorld new.
 	avatar := SRAvatar new.
-	world avatar: avatar.
 	world addChild: avatar.
 	world addChild: xr.
 	menu := SRMenu new sticky: true; yourself.

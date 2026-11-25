@@ -14,6 +14,19 @@ Class {
 }
 
 {
+	#category : #helpers,
+	#'squeak_changestamp' : 'leo-MCPServer 11/23/2026 15:00'
+}
+SRArrowTest >> panelAt: aVector3 [
+
+	| panel |
+	panel := SRMorphPanel new.
+	scene addChild: panel.
+	panel globalTranslation: aVector3.
+	^ panel
+]
+
+{
 	#category : #running,
 	#'squeak_changestamp' : 'leo-MCPServer 11/18/2026 17:56'
 }
@@ -25,6 +38,17 @@ SRArrowTest >> setUp [
 	scene := SRObject new.
 	arrow := SRArrow new.
 	scene addChild: arrow
+]
+
+{
+	#category : #helpers,
+	#'squeak_changestamp' : 'leo-MCPServer 11/23/2026 15:01'
+}
+SRArrowTest >> shoot [
+
+	arrow globalTranslation: 0 @ 2m @ 0.
+	arrow launchWith: 0 @ 0 @ -20.
+	5 timesRepeat: [arrow isStepping ifTrue: [arrow step: 0.1]]
 ]
 
 {
@@ -48,6 +72,33 @@ SRArrowTest >> testAStraightDownFlightStaysWellDefined [
 	arrow step: 0.1.
 	self assert: ((arrow forward dot: Vector3 down) closeTo: 1).
 	self deny: arrow globalTranslation y isNaN
+]
+
+{
+	#category : #tests,
+	#'squeak_changestamp' : 'leo-MCPServer 11/23/2026 15:01'
+}
+SRArrowTest >> testAStuckArrowLetsRaysThroughToItsPanel [
+
+	| panel hit |
+	panel := self panelAt: 0 @ 2m @ -3m.
+	self shoot.
+	hit := (SRRay origin: arrow globalTranslation - arrow forward forward: arrow forward) castNearest: scene.
+	self assert: hit object == panel plane
+]
+
+{
+	#category : #tests,
+	#'squeak_changestamp' : 'leo-MCPServer 11/23/2026 15:01'
+}
+SRArrowTest >> testAStuckArrowMovesWithItsPanel [
+
+	| panel before |
+	panel := self panelAt: 0 @ 2m @ -3m.
+	self shoot.
+	before := arrow globalTranslation.
+	panel globalTranslation: panel globalTranslation + (1m @ 0 @ 0).
+	self assert: (arrow globalTranslation - before - (1m @ 0 @ 0)) length < 0.0001
 ]
 
 {
@@ -91,6 +142,18 @@ SRArrowTest >> testTheArrowDespawnsBelowTheThreshold [
 
 {
 	#category : #tests,
+	#'squeak_changestamp' : 'leo-MCPServer 11/23/2026 15:01'
+}
+SRArrowTest >> testTheArrowFliesPastAPanelItMisses [
+
+	self panelAt: 3m @ 2m @ -3m.
+	self shoot.
+	self assert: arrow parent == scene.
+	self assert: arrow isStepping
+]
+
+{
+	#category : #tests,
 	#'squeak_changestamp' : 'leo-MCPServer 11/18/2026 17:56'
 }
 SRArrowTest >> testTheArrowPointsAlongItsFlight [
@@ -99,6 +162,21 @@ SRArrowTest >> testTheArrowPointsAlongItsFlight [
 	arrow launchWith: 0 @ 0 @ -20.
 	10 timesRepeat: [arrow step: 0.1].
 	self assert: ((arrow forward dot: arrow velocity normalized) closeTo: 1)
+]
+
+{
+	#category : #tests,
+	#'squeak_changestamp' : 'leo-MCPServer 11/23/2026 15:01'
+}
+SRArrowTest >> testTheArrowSticksIntoAPanelItHits [
+
+	| panel |
+	panel := self panelAt: 0 @ 2m @ -3m.
+	self shoot.
+	self assert: arrow parent == panel.
+	self assert: arrow isStuck.
+	self deny: arrow isStepping.
+	self assert: (arrow tip z - (-3m - SRArrow penetrationDepth)) abs < 1cm
 ]
 
 {

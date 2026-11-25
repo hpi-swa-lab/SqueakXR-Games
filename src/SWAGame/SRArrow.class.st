@@ -1,5 +1,5 @@
 "
-An arrow. Once launched, it flies under gravity until it falls below the despawn height.
+An arrow. Once launched, it flies under gravity until it sticks into a morph panel or falls below the despawn height.
 "
 Class {
 	#name : #SRArrow,
@@ -55,6 +55,24 @@ SRArrow class >> length [
 ]
 
 {
+	#category : #constants,
+	#'squeak_changestamp' : 'leo-MCPServer 11/23/2026 15:00'
+}
+SRArrow class >> penetrationDepth [
+
+	^ 3cm
+]
+
+{
+	#category : #constants,
+	#'squeak_changestamp' : 'leo-MCPServer 11/23/2026 15:00'
+}
+SRArrow class >> tipDistance [
+
+	^ self length + 2cm
+]
+
+{
 	#category : #initialization,
 	#'squeak_changestamp' : 'leo-MCPServer 11/18/2026 17:55'
 }
@@ -87,6 +105,15 @@ SRArrow >> initialize [
 ]
 
 {
+	#category : #testing,
+	#'squeak_changestamp' : 'leo-MCPServer 11/23/2026 15:00'
+}
+SRArrow >> isStuck [
+
+	^ parent notNil and: [parent isMorphPanel]
+]
+
+{
 	#category : #flying,
 	#'squeak_changestamp' : 'leo-MCPServer 11/18/2026 17:55'
 }
@@ -95,6 +122,32 @@ SRArrow >> launchWith: aVelocity [
 	velocity := aVelocity.
 	isStepping := true.
 	self pointAlongVelocity
+]
+
+{
+	#category : #sticking,
+	#'squeak_changestamp' : 'leo-MCPServer 11/23/2026 15:00'
+}
+SRArrow >> panelHitFrom: start to: end [
+
+	| segment hit |
+	segment := end - start.
+	segment isZero ifTrue: [^ nil].
+	hit := (SRRay origin: start forward: segment normalized) castNearestObjects: self panelSurfaces.
+	hit ifNil: [^ nil].
+	^ (start distanceTo: hit point) <= segment length
+		ifTrue: [hit]
+]
+
+{
+	#category : #sticking,
+	#'squeak_changestamp' : 'leo-MCPServer 11/23/2026 15:00'
+}
+SRArrow >> panelSurfaces [
+
+	^ Array streamContents: [:stream |
+		self sceneRoot allDo: [:each |
+			each isMorphPanel ifTrue: [stream nextPut: each plane]]]
 ]
 
 {
@@ -111,14 +164,42 @@ SRArrow >> pointAlongVelocity [
 
 {
 	#category : #stepping,
-	#'squeak_changestamp' : 'leo-MCPServer 11/18/2026 17:55'
+	#'squeak_changestamp' : 'leo-MCPServer 11/23/2026 15:00'
 }
 SRArrow >> step: deltaTime [
 
+	| tip |
+	tip := self tip.
 	velocity := velocity + (self class gravity * deltaTime).
 	self globalTranslation: self globalTranslation + (velocity * deltaTime).
 	self pointAlongVelocity.
+	(self panelHitFrom: tip to: self tip) ifNotNil: [:hit | ^ self stickInto: hit].
 	self globalTranslation y < self class despawnHeight ifTrue: [self remove]
+]
+
+{
+	#category : #sticking,
+	#'squeak_changestamp' : 'leo-MCPServer 11/23/2026 15:00'
+}
+SRArrow >> stickInto: anIntersection [
+
+	| transform |
+	velocity := Vector3 zero.
+	isStepping := false.
+	self globalTranslation: anIntersection point - (self forward * (self class tipDistance - self class penetrationDepth)).
+	transform := self globalTransform copy.
+	anIntersection object parent addChild: self.
+	self globalTransform: transform.
+	self allDo: [:each | each ignoreCollision: true]
+]
+
+{
+	#category : #accessing,
+	#'squeak_changestamp' : 'leo-MCPServer 11/23/2026 15:00'
+}
+SRArrow >> tip [
+
+	^ self globalTranslation + (self forward * self class tipDistance)
 ]
 
 {
