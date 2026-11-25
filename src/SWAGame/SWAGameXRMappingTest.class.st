@@ -314,6 +314,47 @@ SWAGameXRMappingTest >> testGrassTextureSurvivesAnImageSave [
 ]
 
 {
+	#category : #tests,
+	#'squeak_changestamp' : 'leo-MCPServer 11/25/2026 19:52'
+}
+SWAGameXRMappingTest >> testHeartsFaceTheAvatarBeingRendered [
+
+	| world first second local |
+	self assert: xr viewerPosition isNil.
+	world := SRWorld new.
+	world addChild: xr.
+	self assert: xr viewerPosition isNil.
+	first := SRAvatar new translation: 1 @ 0 @ 2; yourself.
+	second := SRAvatar new translation: 5 @ 0 @ 5; yourself.
+	world addChild: first; addChild: second.
+	local := [:avatar | xr globalTransform globalPointToLocal: avatar camera globalTranslation].
+	SRRenderingAvatarVariable value: second during: [
+		self assert: (local value: second) equals: xr viewerPosition].
+	self assert: (local value: first) equals: xr viewerPosition.
+]
+
+{
+	#category : #tests,
+	#'squeak_changestamp' : 'leo-MCPServer 11/25/2026 19:52'
+}
+SWAGameXRMappingTest >> testLeavingWalkModeReturnsTheActingAvatarToTheOriginAndOthersBehind [
+
+	| world first second |
+	world := SRWorld new.
+	first := SRAvatar desktop.
+	second := SRAvatar xr.
+	world addChild: first; addChild: second; addChild: xr.
+	first translation: 3 @ 0 @ 3.
+	second translation: 4 @ 0 @ 4.
+	SRActingAvatarVariable value: second during: [xr exitWalkMode].
+	self assert: Vector3 zero equals: second translation.
+	self assert: 0m @ 0m @ 2.5m equals: first translation.
+	xr exitWalkMode.
+	self assert: Vector3 zero equals: first translation.
+	self assert: 0m @ 0m @ 2.5m equals: second translation.
+]
+
+{
 	#category : #'tests - mapping',
 	#'squeak_changestamp' : 'MCPServer 10/15/2026 16:08'
 }
@@ -648,7 +689,7 @@ SWAGameXRMappingTest >> testTogglingAfterAPanelWasRemovedByItsHaloReopensIt [
 
 {
 	#category : #tests,
-	#'squeak_changestamp' : 'leo-MCPServer 11/20/2026 19:10'
+	#'squeak_changestamp' : 'leo-MCPServer 11/25/2026 19:51'
 }
 SWAGameXRMappingTest >> testToolRowsMarkTheHandHoldingThem [
 	"Each row arms the hand that reached for it, so the row has to be able to

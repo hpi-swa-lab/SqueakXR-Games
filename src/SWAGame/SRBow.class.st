@@ -130,15 +130,16 @@ SRBow class >> soundPath: aFileName [
 
 {
 	#category : #menu,
-	#'squeak_changestamp' : 'leo-MCPServer 11/18/2026 17:56'
+	#'squeak_changestamp' : 'leo-MCPServer 11/25/2026 19:52'
 }
 SRBow class >> xrMenuSpawn: aMenu [
 	<xrMenu: #(world games) label: 'Cool Bow and Arrow' priority: 260>
 
-	| bow |
+	| camera bow |
+	camera := (SWAGameXR actingAvatarIn: aMenu world) ifNil: [^ nil] ifNotNil: [:avatar | avatar camera].
 	bow := self new.
 	aMenu world addChild: bow.
-	bow setTransformAt: aMenu position facingCamera: aMenu world camera.
+	bow setTransformAt: aMenu position facingCamera: camera.
 	^ bow
 ]
 

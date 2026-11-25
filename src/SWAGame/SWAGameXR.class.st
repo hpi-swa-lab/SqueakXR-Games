@@ -88,6 +88,16 @@ Class {
 }
 
 {
+	#category : #avatars,
+	#'squeak_changestamp' : 'leo-MCPServer 11/25/2026 19:52'
+}
+SWAGameXR class >> actingAvatarIn: aWorld [
+
+	aWorld ifNil: [^ nil].
+	^ aWorld actingAvatar ifNil: [self firstAvatarIn: aWorld]
+]
+
+{
 	#category : #preferences,
 	#'squeak_changestamp' : 'MCPServer (jl) 11/2/2026 16:32'
 }
@@ -165,6 +175,18 @@ SWAGameXR class >> colorForMaterial: aSymbol [
 	^ (self terrainMaterials
 		detect: [:each | each first == aSymbol]
 		ifNone: [^ Color magenta]) third
+]
+
+{
+	#category : #avatars,
+	#'squeak_changestamp' : 'leo-MCPServer 11/25/2026 19:52'
+}
+SWAGameXR class >> firstAvatarIn: aWorld [
+	"The fallback when SWAGame has no acting or rendering avatar to go by."
+
+	aWorld ifNil: [^ nil].
+	aWorld avatarsDo: [:each | ^ each].
+	^ nil
 ]
 
 {
@@ -443,15 +465,24 @@ SWAGameXR class >> terrainMaterials [
 ]
 
 {
+	#category : #avatars,
+	#'squeak_changestamp' : 'leo-MCPServer 11/25/2026 19:52'
+}
+SWAGameXR class >> viewingAvatarIn: aWorld [
+
+	^ SRRenderingAvatarVariable value ifNil: [self firstAvatarIn: aWorld]
+]
+
+{
 	#category : #'xr menu',
-	#'squeak_changestamp' : 'MCPServer (jl) 11/2/2026 17:32'
+	#'squeak_changestamp' : 'leo-MCPServer 11/25/2026 19:52'
 }
 SWAGameXR class >> xrMenuSpawn: aMenu [
 	<xrMenu: #(world games) label: 'SWAGame' priority: 250>
 	"On the floor ahead of the viewer: the game's origin is at ground level."
 	| xrWorld camera forward ahead game yaw |
 	xrWorld := aMenu world.
-	camera := xrWorld camera.
+	camera := (self actingAvatarIn: xrWorld) ifNil: [^ nil] ifNotNil: [:avatar | avatar camera].
 	forward := camera globalTransform localDirToGlobal: Vector3 forward.
 	"Flatten to the horizontal plane, so looking down does not pull the game in."
 	forward := Vector3 x: forward x y: 0 z: forward z.
@@ -467,6 +498,15 @@ SWAGameXR class >> xrMenuSpawn: aMenu [
 	xrWorld addChild: game.
 	game generateWorld.
 	^ game
+]
+
+{
+	#category : #avatars,
+	#'squeak_changestamp' : 'leo-MCPServer 11/25/2026 19:52'
+}
+SWAGameXR >> actingAvatar [
+
+	^ self class actingAvatarIn: self world
 ]
 
 {
@@ -703,7 +743,7 @@ SWAGameXR >> avatarsDo: aBlock [
 
 {
 	#category : #panels,
-	#'squeak_changestamp' : 'jl-MCPServer 11/20/2026 14:09'
+	#'squeak_changestamp' : 'leo-MCPServer 11/25/2026 19:48'
 }
 SWAGameXR >> bringPanelsToHand: aHand [
 	"Walk mode has no table to stand the panels beside, so they come to the
@@ -717,7 +757,9 @@ SWAGameXR >> bringPanelsToHand: aHand [
 	| avatar |
 	avatar := aHand avatar.
 	avatar ifNil: [^ self].
-	self placePanelsAt: (avatar menuPlacementPositionForHand: aHand)
+	self
+		placePanelsAt: (avatar menuPlacementPositionForHand: aHand)
+		facing: avatar camera
 ]
 
 {
@@ -1329,7 +1371,7 @@ SWAGameXR >> ensureVoxelMeshMaterial [
 
 {
 	#category : #'walk mode',
-	#'squeak_changestamp' : 'jl-MCPServer 11/20/2026 14:09'
+	#'squeak_changestamp' : 'leo-MCPServer 11/25/2026 19:52'
 }
 SWAGameXR >> enterWalkMode [
 	"One block is one metre and the player stands in it. Scale and locomotion are
@@ -1344,24 +1386,25 @@ SWAGameXR >> enterWalkMode [
 		each locomotionEnabled: true].
 	"There is no table to stand the panels beside any more, and they were
 	sized for the board edge 16 m away."
-	self currentXRWorld ifNotNil: [:w |
-		w actingAvatar ifNotNil: [:avatar | self bringPanelsToHand: avatar rightHand]].
+	self actingAvatar ifNotNil: [:avatar | self bringPanelsToHand: avatar rightHand].
 ]
 
 {
 	#category : #'walk mode',
-	#'squeak_changestamp' : 'jl-MCPServer 11/20/2026 14:09'
+	#'squeak_changestamp' : 'leo-MCPServer 11/25/2026 19:52'
 }
 SWAGameXR >> exitWalkMode [
 	"Back to the table. The avatars return to the rig origin, since a player left
 	standing where a 1 m world used to be is 20 times too far away to see it.
 	A second player stands 2.5 m back, where SRSimpleAvatarMovementEmulator starts one."
+	| first |
 	walkMode := false.
 	self worldScale: self class tableWorldScale.
 	self repositionPanelsAtTable.
+	first := self actingAvatar.
 	self avatarsDo: [:each |
 		each useDefaultLocomotion.
-		each translation: (each == self world avatar
+		each translation: (each == first
 			ifTrue: [Vector3 zero]
 			ifFalse: [0m @ 0m @ 2.5m])].
 ]
@@ -1607,7 +1650,7 @@ SWAGameXR >> hand: aHand holds: aToolOrNil [
 
 {
 	#category : #menus,
-	#'squeak_changestamp' : 'jl-MCPServer 11/20/2026 14:09'
+	#'squeak_changestamp' : 'leo-MCPServer 11/25/2026 19:52'
 }
 SWAGameXR >> handMarkerFor: aToolOrNil [
 	"Which hands are holding this, for a tool row's label. Both can be, since a
@@ -1616,8 +1659,7 @@ SWAGameXR >> handMarkerFor: aToolOrNil [
 	"#world, not #currentXRWorld: the latter is SRWorld current, so a game in any
 	other scene would report the hands of whichever world happens to be running."
 	| avatar marks |
-	avatar := self world ifNil: [^ ''] ifNotNil: [:w | w actingAvatar].
-	avatar ifNil: [^ ''].
+	avatar := self actingAvatar ifNil: [^ ''].
 	marks := WriteStream on: String new.
 	{'L' -> avatar leftHand. 'R' -> avatar rightHand} do: [:each |
 		(self hand: each value holds: aToolOrNil)
@@ -2131,7 +2173,7 @@ SWAGameXR >> placeBoxAt: gridCoord type: aBlockTypeId [
 
 {
 	#category : #panels,
-	#'squeak_changestamp' : 'MCPServer 10/16/2026 13:26'
+	#'squeak_changestamp' : 'leo-MCPServer 11/25/2026 19:52'
 }
 SWAGameXR >> placeNewPanel: aSlab atSide: aSign z: aZ [
 	"Where a panel goes when it is switched on. Standing in the world there is no
@@ -2148,8 +2190,7 @@ SWAGameXR >> placeNewPanel: aSlab atSide: aSign z: aZ [
 		^ aSlab
 			position: (self panelAnchorAtSide: aSign z: aZ);
 			rotation: self globalRotation].
-	camera := self currentXRWorld ifNil: [^ self] ifNotNil: [:w | w camera].
-	camera ifNil: [^ self].
+	camera := self actingAvatar ifNil: [^ self] ifNotNil: [:avatar | avatar camera].
 	flat := [:v |
 		| h |
 		h := Vector3 x: v x y: 0 z: v z.
@@ -2192,24 +2233,31 @@ SWAGameXR >> placeOnSurface: anAvatar [
 
 {
 	#category : #panels,
-	#'squeak_changestamp' : 'MCPServer 10/16/2026 13:47'
+	#'squeak_changestamp' : 'leo-MCPServer 11/25/2026 19:52'
 }
 SWAGameXR >> placePanel: aSlab at: aPosition [
+
+	self actingAvatar ifNotNil: [:avatar |
+		self placePanel: aSlab at: aPosition facing: avatar camera]
+]
+
+{
+	#category : #panels,
+	#'squeak_changestamp' : 'leo-MCPServer 11/25/2026 19:48'
+}
+SWAGameXR >> placePanel: aSlab at: aPosition facing: aCamera [
 	"Face on to the player. Read the position from the menu that opened the
 	panel: SRMenuItem runs the action before closeCascade, so the menu is still
 	standing where the hand put it."
 
-	| camera |
 	aSlab ifNil: [^ self].
-	camera := self currentXRWorld ifNil: [^ self] ifNotNil: [:w | w camera].
-	camera ifNil: [^ self].
 	"Local position and rotation rather than #setTransformAt:facingCamera:. That
 	writes a whole look-at matrix, which drops the panel's scale and is undone
 	again as soon as the global transform is recomputed from the stale local one.
 	Panels are children of the world, so local is global here."
 	aSlab
 		position: aPosition;
-		rotation: (self facingFrom: aPosition toward: camera globalTranslation)
+		rotation: (self facingFrom: aPosition toward: aCamera globalTranslation)
 ]
 
 {
@@ -2230,19 +2278,17 @@ SWAGameXR >> placePanel: aSlab besideMenu: aMenu [
 
 {
 	#category : #panels,
-	#'squeak_changestamp' : 'MCPServer 10/16/2026 13:20'
+	#'squeak_changestamp' : 'leo-MCPServer 11/25/2026 19:48'
 }
-SWAGameXR >> placePanelsAt: aPosition [
+SWAGameXR >> placePanelsAt: aPosition facing: aCamera [
 	"Face on to the player, and offset sideways from each other, otherwise the
 	two slabs occupy the same spot."
 
-	| camera |
-	camera := self currentXRWorld ifNil: [^ self] ifNotNil: [:w | w camera].
-	camera ifNil: [^ self].
 	{buttonSlab -> 1. toolSlab -> -1} do: [:each |
 		self
 			placePanel: each key
-			at: aPosition + (camera right * (each value * self panelScale * 12))]
+			at: aPosition + (aCamera right * (each value * self panelScale * 12))
+			facing: aCamera]
 ]
 
 {
@@ -2841,13 +2887,13 @@ SWAGameXR >> spawn: aSpeciesSymbol atX: gx z: gz [
 
 {
 	#category : #tools,
-	#'squeak_changestamp' : 'jl-MCPServer 11/20/2026 14:09'
+	#'squeak_changestamp' : 'leo-MCPServer 11/25/2026 19:52'
 }
 SWAGameXR >> spawnGunFor: aHand [
 
 	| avatar camera position gun |
 	avatar := aHand
-		ifNil: [self world ifNil: [^ self] ifNotNil: [:w | w actingAvatar]]
+		ifNil: [self actingAvatar]
 		ifNotNil: [aHand avatar].
 	avatar ifNil: [^ self].
 	camera := avatar camera.
@@ -3219,15 +3265,14 @@ SWAGameXR >> updatePetting: aRabbit touchedAt: touchPoints over: seconds [
 
 {
 	#category : #simulation,
-	#'squeak_changestamp' : 'MCPServer (jl) 11/2/2026 17:32'
+	#'squeak_changestamp' : 'leo-MCPServer 11/25/2026 19:52'
 }
 SWAGameXR >> updateSimulationCentre [
 	| radius camera local |
 	radius := self class simulationRadiusChunks.
 	world simulationRadiusChunks: (radius > 0 ifTrue: [radius] ifFalse: [nil]).
 	radius > 0 ifFalse: [^ self].
-	camera := self currentXRWorld ifNil: [^ self] ifNotNil: [:w | w camera].
-	camera ifNil: [^ self].
+	camera := self actingAvatar ifNil: [^ self] ifNotNil: [:avatar | avatar camera].
 	local := self cellPositionOf: camera.
 	world simulateAroundCellX: local x z: local z
 ]
@@ -3266,14 +3311,21 @@ SWAGameXR >> vegetationBaseFor: aCell [
 
 {
 	#category : #petting,
-	#'squeak_changestamp' : 'MCPServer (leo) 11/5/2026 17:49'
+	#'squeak_changestamp' : 'leo-MCPServer 11/25/2026 19:52'
 }
 SWAGameXR >> viewerPosition [
 
-	| avatar |
-	avatar := self world ifNil: [^ nil] ifNotNil: [:w | w avatar].
-	avatar ifNil: [^ nil].
-	^ self globalTransform globalPointToLocal: avatar camera globalTranslation
+	^ self viewingAvatar ifNotNil: [:avatar |
+		self globalTransform globalPointToLocal: avatar camera globalTranslation]
+]
+
+{
+	#category : #avatars,
+	#'squeak_changestamp' : 'leo-MCPServer 11/25/2026 19:52'
+}
+SWAGameXR >> viewingAvatar [
+
+	^ self class viewingAvatarIn: self world
 ]
 
 {
