@@ -5,7 +5,8 @@ Class {
 	#name : #SRArrow,
 	#superclass : #SRObject,
 	#instVars : [
-		'velocity'
+		'velocity',
+		'hitSound'
 	],
 	#classVars : [
 		'DespawnHeight'
@@ -94,14 +95,25 @@ SRArrow >> buildModel [
 
 {
 	#category : #initialization,
-	#'squeak_changestamp' : 'leo-MCPServer 11/18/2026 17:55'
+	#'squeak_changestamp' : 'leo-MCPServer 11/26/2026 18:41'
 }
 SRArrow >> initialize [
 
 	super initialize.
 	isStepping := false.
 	velocity := Vector3 zero.
-	self buildModel
+	self buildModel.
+	self initializeSounds
+]
+
+{
+	#category : #initialization,
+	#'squeak_changestamp' : 'leo-MCPServer 11/26/2026 18:41'
+}
+SRArrow >> initializeSounds [
+
+	hitSound := SRAudioPlayer new filepath: (SRBow soundPath: 'arrow-hit.ogg').
+	self addChild: hitSound
 ]
 
 {
@@ -179,7 +191,7 @@ SRArrow >> step: deltaTime [
 
 {
 	#category : #sticking,
-	#'squeak_changestamp' : 'leo-MCPServer 11/23/2026 15:00'
+	#'squeak_changestamp' : 'leo-MCPServer 11/26/2026 18:41'
 }
 SRArrow >> stickInto: anIntersection [
 
@@ -190,7 +202,8 @@ SRArrow >> stickInto: anIntersection [
 	transform := self globalTransform copy.
 	anIntersection object parent addChild: self.
 	self globalTransform: transform.
-	self allDo: [:each | each ignoreCollision: true]
+	self allDo: [:each | each ignoreCollision: true].
+	hitSound play
 ]
 
 {
