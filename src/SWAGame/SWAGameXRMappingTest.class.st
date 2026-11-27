@@ -186,6 +186,75 @@ SWAGameXRMappingTest >> testChangingTheScaleReachesTheSharedSpace [
 
 {
 	#category : #tests,
+	#'squeak_changestamp' : 'jl-MCPServer 11/25/2026 17:41'
+}
+SWAGameXRMappingTest >> testClosingDisarmsOnlyTheHandsHoldingItsTools [
+	| world avatar other otherTool |
+	world := SRWorld new.
+	avatar := SRAvatar new.
+	world avatar: avatar.
+	world addChild: avatar.
+	world addChild: xr.
+	other := SWAGameXR new.
+	[otherTool := SWAGameDigTool new game: other; yourself.
+	avatar rightHand basicTool: (SWAGameDigTool new game: xr; yourself).
+	avatar leftHand basicTool: otherTool.
+	xr close.
+	self assert: avatar rightHand tool isNil.
+	self assert: avatar leftHand tool == otherTool]
+		ensure: [other destroy].
+]
+
+{
+	#category : #tests,
+	#'squeak_changestamp' : 'jl-MCPServer 11/25/2026 17:41'
+}
+SWAGameXRMappingTest >> testClosingInFirstPersonGivesTheAvatarBack [
+	"Closed in walk mode, the player was left with the game's locomotion, standing
+	where a 1 m world used to be."
+	| world avatar |
+	world := SRWorld new.
+	avatar := SRAvatar new.
+	world avatar: avatar.
+	world addChild: avatar.
+	world addChild: xr.
+	xr instVarNamed: 'walkMode' put: true.
+	avatar locomotionEnabled: true.
+	avatar translation: 20m @ 0m @ 30m.
+	xr close.
+	self assert: (avatar instVarNamed: 'locomotionEnabled') isNil.
+	self assert: Vector3 zero equals: avatar translation.
+]
+
+{
+	#category : #tests,
+	#'squeak_changestamp' : 'jl-MCPServer 11/25/2026 17:41'
+}
+SWAGameXRMappingTest >> testClosingRemovesTheGameAndItsPanels [
+	"The panels are world children, not children of the game, so removing the
+	game alone left them standing in the scene."
+	| world panels |
+	world := SRWorld new.
+	world addChild: xr.
+	panels := {
+		'popGraph' -> SWAGamePopGraph new.
+		'traceGraph' -> SWAGameMobTraceGraph new.
+		'mobInspector' -> SRObject new.
+		'buttonSlab' -> SRObject new.
+		'toolSlab' -> SRObject new}.
+	panels do: [:each |
+		world addChild: each value.
+		xr instVarNamed: each key put: each value].
+	xr close.
+	self deny: xr isOpen.
+	self deny: (world children includes: xr).
+	panels do: [:each |
+		self deny: each value isOpen description: each key , ' is still in the world'.
+		self assert: (xr instVarNamed: each key) isNil description: each key , ' is still held'].
+]
+
+{
+	#category : #tests,
 	#'squeak_changestamp' : 'leo-MCPServer 11/20/2026 19:10'
 }
 SWAGameXRMappingTest >> testEachHandTargetsItsOwnVoxel [
@@ -503,6 +572,20 @@ SWAGameXRMappingTest >> testSettingsAreInACuratedSubmenuAndTheToolsStayAtTheTop 
 		self assert: each keepsMenuOpen description: each label , ' closes the menu'].
 	"Hitting the row again closes it, rather than stacking a second submenu."
 	self assert: (menu openSubmenuFromItem: settingsRow filledBy: [:each | each]) isNil.
+]
+
+{
+	#category : #tests,
+	#'squeak_changestamp' : 'jl-MCPServer 11/25/2026 17:41'
+}
+SWAGameXRMappingTest >> testTheContextMenuOffersCloseAndItClosesTheMenu [
+	| menu row |
+	menu := SRMenu new.
+	xr addCustomMenuItemsTo: menu.
+	menu rebuild.
+	row := menu children detect: [:each | each isMenuItem and: [each label = 'Close']] ifNone: [nil].
+	self assert: row notNil.
+	self deny: row keepsMenuOpen.
 ]
 
 {

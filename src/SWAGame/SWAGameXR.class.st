@@ -511,7 +511,7 @@ SWAGameXR >> actingAvatar [
 
 {
 	#category : #menus,
-	#'squeak_changestamp' : 'jl 11/4/2026 10:50'
+	#'squeak_changestamp' : 'jl-MCPServer 11/25/2026 17:41'
 }
 SWAGameXR >> addCustomMenuItemsTo: aMenu [
 	"The settings are curated into one submenu rather than listed here: the top
@@ -528,6 +528,11 @@ SWAGameXR >> addCustomMenuItemsTo: aMenu [
 	aMenu
 		addItem: 'Spawn gun'
 		action: [:item :hand | self spawnGunFor: hand]
+		keepOpen: false.
+	"Waits for the next frame: menu actions run inside the input traversal."
+	aMenu
+		addItem: 'Close'
+		action: [self world ifNotNil: [:w | w addDeferredFrameMessage: [self close]]]
 		keepOpen: false.
 	self addToolItemsTo: aMenu
 ]
@@ -869,6 +874,22 @@ SWAGameXR >> chunkRebuildBudget [
 }
 SWAGameXR >> chunkRebuildBudget: anInteger [
 	chunkRebuildBudget := anInteger max: 1
+]
+
+{
+	#category : #initialization,
+	#'squeak_changestamp' : 'jl-MCPServer 11/25/2026 17:41'
+}
+SWAGameXR >> close [
+	"For good, unlike #remove, which leaves the game able to be added back. Needs
+	#world, so before the removal."
+	walkMode == true ifTrue: [
+		walkMode := false.
+		self returnAvatarsToRig].
+	self disarmHands.
+	petSound ifNotNil: [:sound | sound stop].
+	petSoundMob := nil.
+	self remove.
 ]
 
 {
@@ -1228,6 +1249,20 @@ SWAGameXR >> disableTools [
 ]
 
 {
+	#category : #tools,
+	#'squeak_changestamp' : 'jl-MCPServer 11/25/2026 17:41'
+}
+SWAGameXR >> disarmHands [
+	"A tool holds its game, so a hand still armed with one keeps a closed game alive."
+	self avatarsDo: [:avatar |
+		avatar hands do: [:hand |
+			(hand notNil
+				and: [(hand tool isKindOf: SWAGameTool)
+				and: [hand tool game == self]])
+					ifTrue: [hand tool: nil]]].
+]
+
+{
 	#category : #simulation,
 	#'squeak_changestamp' : 'MCPServer (jl) 11/3/2026 18:51'
 }
@@ -1391,22 +1426,14 @@ SWAGameXR >> enterWalkMode [
 
 {
 	#category : #'walk mode',
-	#'squeak_changestamp' : 'leo-MCPServer 11/25/2026 19:52'
+	#'squeak_changestamp' : 'jl-MCPServer 11/25/2026 17:41'
 }
 SWAGameXR >> exitWalkMode [
-	"Back to the table. The avatars return to the rig origin, since a player left
-	standing where a 1 m world used to be is 20 times too far away to see it.
-	A second player stands 2.5 m back, where SRSimpleAvatarMovementEmulator starts one."
-	| first |
+	"Back to the table."
 	walkMode := false.
 	self worldScale: self class tableWorldScale.
 	self repositionPanelsAtTable.
-	first := self actingAvatar.
-	self avatarsDo: [:each |
-		each useDefaultLocomotion.
-		each translation: (each == first
-			ifTrue: [Vector3 zero]
-			ifFalse: [0m @ 0m @ 2.5m])].
+	self returnAvatarsToRig.
 ]
 
 {
@@ -2671,6 +2698,21 @@ SWAGameXR >> resizeToGrid: cells height: blockHeight [
 
 	self generateLevel.
 	^ self
+]
+
+{
+	#category : #'walk mode',
+	#'squeak_changestamp' : 'jl-MCPServer 11/25/2026 17:41'
+}
+SWAGameXR >> returnAvatarsToRig [
+	"A player left standing where a 1 m world used to be is 20 times too far away
+	to see the table. A second player stands 2.5 m back, where
+	SRSimpleAvatarMovementEmulator starts one."
+	self avatarsDo: [:each |
+		each useDefaultLocomotion.
+		each translation: (each == self world avatar
+			ifTrue: [Vector3 zero]
+			ifFalse: [0m @ 0m @ 2.5m])].
 ]
 
 {
